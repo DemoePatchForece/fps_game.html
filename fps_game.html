@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPS Game</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/controls/PointerLockControls.js"></script>
+</head>
+<body>
+    <script>
+        let scene, camera, renderer, controls;
+        let bullets = [], enemies = [];
+        
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Controls
+            controls = new THREE.PointerLockControls(camera, document.body);
+            document.addEventListener("click", () => controls.lock());
+            scene.add(controls.getObject());
+            
+            // Ground
+            let ground = new THREE.Mesh(
+                new THREE.PlaneGeometry(100, 100),
+                new THREE.MeshBasicMaterial({ color: 0x228B22, side: THREE.DoubleSide })
+            );
+            ground.rotation.x = -Math.PI / 2;
+            scene.add(ground);
+
+            // Enemies
+            for (let i = 0; i < 5; i++) {
+                let enemy = new THREE.Mesh(
+                    new THREE.BoxGeometry(1, 1, 1),
+                    new THREE.MeshBasicMaterial({ color: 0xff0000 })
+                );
+                enemy.position.set(Math.random() * 20 - 10, 0.5, Math.random() * 20 - 10);
+                scene.add(enemy);
+                enemies.push(enemy);
+            }
+
+            camera.position.y = 1.6;
+            animate();
+        }
+
+        function shoot() {
+            let bullet = new THREE.Mesh(
+                new THREE.SphereGeometry(0.1, 8, 8),
+                new THREE.MeshBasicMaterial({ color: 0xffff00 })
+            );
+            bullet.position.copy(camera.position);
+            scene.add(bullet);
+            bullets.push({ mesh: bullet, velocity: camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(0.5) });
+        }
+        
+        document.addEventListener("mousedown", shoot);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            bullets.forEach((bullet, index) => {
+                bullet.mesh.position.add(bullet.velocity);
+                if (bullet.mesh.position.length() > 50) {
+                    scene.remove(bullet.mesh);
+                    bullets.splice(index, 1);
+                }
+            });
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener("resize", () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        init();
+    </script>
+</body>
+</html>
